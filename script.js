@@ -13,7 +13,7 @@ const mNota = document.querySelector(".modal__average");
 fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt-BR")
     .then(promise => promise.json())
     .then(body => {
-        const filmes = body.results;
+        let filmes = body.results;
         let i = 0;
         for (i; i < 5; i++) {
             const titulo = document.createElement("span");
@@ -34,6 +34,7 @@ fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt
 
             const divMovie = document.createElement("div");
             divMovie.classList.add("movie");
+            divMovie.dataset.movieId = filmes[i].id;
             divMovie.appendChild(divMovieInfo);
             divMovie.style.backgroundImage = `url(${filmes[i].poster_path})`;
 
@@ -42,12 +43,18 @@ fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt
         const filmesCarrossel = document.querySelectorAll(".movie");
         function atualizarCarrossel() {
             filmesCarrossel.forEach(filme => {
+                if (!filmes[i]) {
+                    filme.classList.add("hidden");
+                    return;
+                }
+
                 filme.firstChild.children[0].textContent = filmes[i].title;
                 filme.firstChild.children[1].textContent = filmes[i].vote_average;
                 const estrela = document.createElement("img");
                 estrela.src = "./assets/estrela.svg";
                 filme.firstChild.children[1].appendChild(estrela);
                 filme.style.backgroundImage = `url(${filmes[i].poster_path})`;
+                filme.dataset.movieId = filmes[i].id;
                 i++;
             });
         }
@@ -65,20 +72,20 @@ fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt
             atualizarCarrossel();
         });
 
-        filmesCarrossel.forEach((filme, index) => {
+        filmesCarrossel.forEach(filme => {
             filme.addEventListener("click", () => {
                 while (mGenres.firstChild) {
                     mGenres.removeChild(mGenres.lastChild);
                 }
-                fetch(`https://tmdb-proxy.cubos-academy.workers.dev/3/movie/${filmes[i - 5 + index].id}?language=pt-BR`)
+                fetch(`https://tmdb-proxy.cubos-academy.workers.dev/3/movie/${filme.dataset.movieId}?language=pt-BR`)
                     .then(res => res.json())
                     .then(body => {
-                        const filme = body;
-                        mTitulo.textContent = filme.title;
-                        mImg.src = filme.backdrop_path;
-                        mSinopse.textContent = filme.overview;
-                        mNota.textContent = filme.vote_average;
-                        filme.genres.forEach(genero => {
+                        const filmeClicado = body;
+                        mTitulo.textContent = filmeClicado.title;
+                        mImg.src = filmeClicado.backdrop_path;
+                        mSinopse.textContent = filmeClicado.overview;
+                        mNota.textContent = filmeClicado.vote_average;
+                        filmeClicado.genres.forEach(genero => {
                             const novoGenero = document.createElement("span");
                             novoGenero.classList.add("modal__genre");
                             novoGenero.textContent = genero.name;
@@ -99,6 +106,7 @@ fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt
             }
             filmesCarrossel.forEach(filme => filme.classList.remove("hidden"));
             if (!input.value.trim()) {
+                filmes = body.results;
                 input.value = "";
                 i = 0;
                 atualizarCarrossel();
@@ -108,21 +116,9 @@ fetch("https://tmdb-proxy.cubos-academy.workers.dev/3/discover/movie?language=pt
                 .then(promise => promise.json())
                 .then(body => {
                     input.value = "";
-                    const pesquisa = body.results;
+                    filmes = body.results;
                     i = 0;
-                    filmesCarrossel.forEach(filme => {
-                        if (!pesquisa[i]) {
-                            filme.classList.add("hidden");
-                            return;
-                        }
-                        filme.firstChild.children[0].textContent = pesquisa[i].title;
-                        filme.firstChild.children[1].textContent = pesquisa[i].vote_average;
-                        const estrela = document.createElement("img");
-                        estrela.src = "./assets/estrela.svg";
-                        filme.firstChild.children[1].appendChild(estrela);
-                        filme.style.backgroundImage = `url(${pesquisa[i].poster_path})`;
-                        i++;
-                    });
+                    atualizarCarrossel();
                 });
         });
     });
